@@ -31,6 +31,9 @@
       case "TCC068":
         Draw($otherPlayer);
         return "";
+      case "TCC069":
+        MZMoveCard($otherPlayer, "MYDISCARD:type=AA", "MYBOTDECK", may:true);
+        return "";
       case "TCC079":
         Draw($currentPlayer);
         return "";
@@ -51,9 +54,29 @@
   function EVOPlayAbility($cardID, $from, $resourcesPaid, $target = "-", $additionalCosts = "")
   {
     global $mainPlayer, $currentPlayer, $defPlayer;
+    global $CS_NamesOfCardsPlayed;
     $rv = "";
     $otherPlayer = ($currentPlayer == 1 ? 2 : 1);
     switch($cardID) {
+      case "EVO007": case "EVO008":
+        AddCurrentTurnEffect($cardID, $currentPlayer);
+        return "";
+      case "EVO235":
+        $options = GetChainLinkCards(($currentPlayer == 1 ? 2 : 1), "AA");
+        if($options != "") {
+          AddDecisionQueue("CHOOSECOMBATCHAIN", $currentPlayer, $options);
+          AddDecisionQueue("COMBATCHAINDEFENSEMODIFIER", $currentPlayer, -1, 1);
+        }
+        return "";
+      case "EVO239":
+        $cardsPlayed = explode(",", GetClassState($currentPlayer, $CS_NamesOfCardsPlayed));
+        for($i=0; $i<count($cardsPlayed); ++$i) {
+          if(CardName($cardsPlayed[$i]) == "Wax On") {
+            PlayAura("CRU075", $currentPlayer);
+            break;
+          }
+        }
+        return "";
       case "EVO245":
         Draw($currentPlayer);
         if(IsRoyal($currentPlayer)) Draw($currentPlayer);
@@ -65,6 +88,9 @@
           PrependDecisionQueue("NOPASS", $currentPlayer, "-");
           PrependDecisionQueue("YESNO", $currentPlayer, "if you want to pitch 2 red cards");
         }
+        return "";
+      case "EVO247":
+        AddCurrentTurnEffect($cardID, $currentPlayer);
         return "";
       default: return "";
     }

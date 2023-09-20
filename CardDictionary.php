@@ -272,6 +272,7 @@ function AbilityCost($cardID)
   else if($set == "OUT") return OUTAbilityCost($cardID);
   else if($set == "DTD") return DTDAbilityCost($cardID);
   else if($set == "TCC") return TCCAbilityCost($cardID);
+  else if($set == "EVO") return EVOAbilityCost($cardID);
   else if($set == "ROG") return ROGUEAbilityCost($cardID);
   return CardCost($cardID);
 }
@@ -382,6 +383,7 @@ function GetAbilityType($cardID, $index = -1, $from="-")
   else if($set == "OUT") return OUTAbilityType($cardID, $index);
   else if($set == "DTD") return DTDAbilityType($cardID, $index);
   else if($set == "TCC") return TCCAbilityType($cardID, $index);
+  else if($set == "EVO") return EVOAbilityType($cardID, $index);
   else if($set == "ROG") return ROGUEAbilityType($cardID, $index);
 }
 
@@ -459,6 +461,7 @@ function IsPlayable($cardID, $phase, $from, $index = -1, &$restriction = null, $
     $banishCard = $banish->Card($index);
     if(!(PlayableFromBanish($banishCard->ID(), $banishCard->Modifier()) || AbilityPlayableFromBanish($banishCard->ID()))) return false;
   }
+  if($from == "DECK" && ($character[1] < 2 || $character[0] != "EVO001" && $character[0] != "EVO002" || CardCost($cardID) > 1 || !SubtypeContains($cardID, "Item", $player) || !ClassContains($cardID, "MECHANOLOGIST", $player))) return false;
   if($phase == "B" && $cardType == "E" && $character[$index+6] == 1) { $restriction = "On combat chain"; return false; }
   if($phase != "B" && $from == "CHAR" && $character[$index+1] != "2") return false;
   if($from == "CHAR" && $phase != "B" && $character[$index+8] == "1") { $restriction = "Frozen"; return false; }
@@ -788,7 +791,9 @@ function IsPlayRestricted($cardID, &$restriction, $from = "", $index = -1, $play
     case "DTD164": return $from != "PLAY" || SearchCount(SearchBanish($currentPlayer, bloodDebtOnly:true)) < 13;
     case "DTD199": return GetClassState($currentPlayer, $CS_HighestRoll) != 6;
     case "DTD208": return !$CombatChain->HasCurrentLink() || CardType($CombatChain->AttackCard()->ID()) != "W";
+    case "TCC011": return EvoUpgradeAmount($player) == 0;//Restricted if no EVOs
     case "TCC079": return HitsInCombatChain() < 3;
+    case "EVO235": return !$CombatChain->HasCurrentLink() || !ClassContains($CombatChain->AttackCard()->ID(), "ASSASSIN", $mainPlayer) || CardType($CombatChain->AttackCard()->ID()) != "AA";
     default: return false;
   }
 }
@@ -871,7 +876,8 @@ function HasBattleworn($cardID)
     case "DVR005": return true;
     case "DYN006": case "DYN026": case "DYN046": case "DYN089": case "DYN117": case "DYN118": return true;
     case "OUT011": return true;
-    case "TCC082": return true;
+    case "TCC082": case "TCC407": case "TCC408": case "TCC409": case "TCC410": return true;
+    case "EVO235": return true;
     default: return false;
   }
 }
@@ -886,6 +892,7 @@ function HasTemper($cardID)
     case "DYN027": case "DYN492b": return true;
     case "DTD047": case "DTD206": case "DTD207": case "DTD211": return true;
     case "TCC029": case "TCC030": case "TCC031": case "TCC032": case "TCC033": return true;
+    case "EVO247": return true;
     default: return false;
   }
 }
@@ -957,6 +964,7 @@ function AbilityHasGoAgain($cardID)
   else if($set == "OUT") return OUTAbilityHasGoAgain($cardID);
   else if($set == "DTD") return DTDAbilityHasGoAgain($cardID);
   else if($set == "TCC") return TCCAbilityHasGoAgain($cardID);
+  else if($set == "EVO") return EVOAbilityHasGoAgain($cardID);
   else if($set == "ROG") return ROGUEAbilityHasGoAgain($cardID);
   switch($cardID) {
     case "RVD004": return true;
@@ -1271,6 +1279,7 @@ function PlayableFromBanish($cardID, $mod="", $nonLimitedOnly=false)
   if($mod == "TCL" || $mod == "TT" || $mod == "TCC" || $mod == "NT" || $mod == "INST" || $mod == "MON212" || $mod == "ARC119") return true;
   if(HasRunegate($cardID) && SearchCount(SearchAurasForCard("ARC112", $currentPlayer, false)) >= CardCost($cardID)) return true;
   $char = &GetPlayerCharacter($currentPlayer);
+  if(SubtypeContains($cardID, "Evo") && ($char[0] == "TCC001" || $char[0] == "EVO007" || $char[0] == "EVO008")) return true;
   switch($cardID) {
     case "MON123": return GetClassState($currentPlayer, $CS_Num6PowBan) > 0;
     case "MON156": case "MON158": return true;

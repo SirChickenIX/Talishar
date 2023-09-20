@@ -45,6 +45,7 @@ function ProcessHitEffect($cardID)
   else if($set == "OUT") return OUTHitEffect($cardID);
   else if($set == "DTD") return DTDHitEffect($cardID);
   else if($set == "TCC") return TCCHitEffect($cardID);
+  else if($set == "EVO") return EVOHitEffect($cardID);
 }
 
 function AttackModifier($cardID, $from = "", $resourcesPaid = 0, $repriseActive = -1)
@@ -148,7 +149,9 @@ function AttackModifier($cardID, $from = "", $resourcesPaid = 0, $repriseActive 
     case "DTD181": case "DTD182": case "DTD183":
       $theirSoul = &GetSoul($defPlayer);
       return (count($theirSoul) > 0 ? 2 : 0);
+    case "TCC013": return EvoUpgradeAmount($mainPlayer);
     case "TCC028": return SearchPitchForCard($mainPlayer, "TCC048") > -1 ? 1 : 0;
+    case "EVO055": return EvoUpgradeAmount($mainPlayer) >= 4? 3 : 0;
     default: return 0;
   }
 }
@@ -614,6 +617,7 @@ function IsOverpowerActive()
     case "DYN492a": return true;
     case "DTD063": case "DTD064": case "DTD065": return SearchCurrentTurnEffects($combatChain[0], $mainPlayer);
     case "DTD115": case "DTD116": case "DTD117": return GetClassState($mainPlayer, $CS_Num6PowBan) > 0;
+    case "EVO055": return EvoUpgradeAmount($mainPlayer) >= 3;
     default: break;
   }
   return false;

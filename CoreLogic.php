@@ -964,12 +964,14 @@ function CanPlayAsInstant($cardID, $index=-1, $from="")
   else if($cardID == "CRU143") { return GetClassState($otherPlayer, $CS_ArcaneDamageTaken) > 0; }
   else if($cardID == "DTD140") return GetClassState($currentPlayer, $CS_LifeLost) > 0 || GetClassState($otherPlayer, $CS_LifeLost) > 0;
   else if($cardID == "DTD141") return GetClassState($currentPlayer, $CS_LifeLost) > 0 || GetClassState($otherPlayer, $CS_LifeLost) > 0;
+  if(SubtypeContains($cardID, "Evo") && (SearchCurrentTurnEffects("EVO007", $currentPlayer) || SearchCurrentTurnEffects("EVO008", $currentPlayer))) return true;
   if($from == "ARS" && $cardType == "A" && $currentPlayer != $mainPlayer && PitchValue($cardID) == 3 && (SearchCharacterActive($currentPlayer, "EVR120") || SearchCharacterActive($currentPlayer, "UPR102") || SearchCharacterActive($currentPlayer, "UPR103") || (SearchCharacterActive($currentPlayer, "CRU097") && SearchCurrentTurnEffects($otherCharacter[0] . "-SHIYANA", $currentPlayer) && IsIyslander($otherCharacter[0])))) return true;
   $isStaticType = IsStaticType($cardType, $from, $cardID);
   $abilityType = "-";
   if($isStaticType) $abilityType = GetAbilityType($cardID, $index, $from);
   if(($cardType == "AR" || ($abilityType == "AR" && $isStaticType)) && IsReactionPhase() && $currentPlayer == $mainPlayer) return true;
   if(($cardType == "DR" || ($abilityType == "DR" && $isStaticType)) && IsReactionPhase() && $currentPlayer != $mainPlayer && IsDefenseReactionPlayable($cardID, $from)) return true;
+  if($from == "DECK" && SearchCharacterActive($currentPlayer, "EVO001") || SearchCharacterActive($currentPlayer, "EVO002")) return true;
   return false;
 }
 
@@ -1541,6 +1543,7 @@ function SelfCostModifier($cardID, $from)
     case "DTD175": case "DTD176": case "DTD177": return ($from == "BANISH" ? -2 : 0);
     case "DTD178": case "DTD179": case "DTD180": return ($from == "BANISH" ? -2 : 0);
     case "DTD213": return (-1 * NumRunechants($currentPlayer));
+    case "EVO055": return EvoUpgradeAmount($currentPlayer) >= 2? -3 : 0;
     default: return 0;
   }
 }
@@ -1950,11 +1953,23 @@ function EvoHandling($cardID, $player)
 {
   $char = &GetPlayerCharacter($player);
   $slot = "";
-  if(SubtypeContains($cardID, "Legs")) $slot = "Legs";
+  if(SubtypeContains($cardID, "Head")) $slot = "Head";
+  else if(SubtypeContains($cardID, "Chest")) $slot = "Chest";
+  else if(SubtypeContains($cardID, "Arms")) $slot = "Arms";
+  else if(SubtypeContains($cardID, "Legs")) $slot = "Legs";
   for($i=0; $i<count($char); $i+=CharacterPieces()) {
-    if(SubtypeContains($char[$i], "Legs")) {
-      $char[$i] = substr($cardID, 0, 3) . (intval(substr($cardID, 3, 3)) + 400);
+    if(SubtypeContains($char[$i], $slot)) {
+      if(SubtypeContains($char[$i], "Base")) {
+        $char[$i] = substr($cardID, 0, 3) . (intval(substr($cardID, 3, 3)) + 400);
+      }
+      else WriteLog("*ERR0R*//No base of that type equipped//");
       break;
     }
   }
+  if(SearchCurrentTurnEffects("EVO007", $player, true) || SearchCurrentTurnEffects("EVO008", $player, true)) Draw($player);
+}
+
+function EvoUpgradeAmount($player)
+{
+  return SearchCount(SearchCharacter($player, subtype:"Evo"));
 }

@@ -368,6 +368,16 @@ function ProcessInput($playerID, $mode, $buttonInput, $cardID, $chkCount, $chkIn
       SetClassState($playerID, $CS_PlayIndex, $index);
       PlayCard($cardID, "PLAY", -1, $index);
       break;
+    case 35: //Play card from deck
+      $index = $cardID; //Overridden to be index instead
+      $deck = &GetDeck($playerID);
+      if($index >= count($deck)) break;
+      $cardID = $deck[$index];
+      if(!IsPlayable($cardID, $turn[0], "DECK", $index)) break;
+      unset($deck[$index]);
+      $deck = array_values($deck);
+      PlayCard($cardID, "DECK");
+      break;
     case 99: //Pass
       if(CanPassPhase($turn[0])) {
         PassInput(false);
@@ -1984,6 +1994,7 @@ function PlayCardEffect($cardID, $from, $resourcesPaid, $target = "-", $addition
         if(ClassContains($cardID, "ILLUSIONIST", $currentPlayer)) IncrementClassState($currentPlayer, $CS_NumIllusionistAttacks);
         if(ClassContains($cardID, "ILLUSIONIST", $currentPlayer) && $definedCardType == "AA") IncrementClassState($currentPlayer, $CS_NumIllusionistActionCardAttacks);
         AuraAttackAbilities($cardID);
+        CharacterAttackAbilities($cardID);
         if($from == "PLAY" && DelimStringContains(CardSubType($cardID), "Ally")) AllyAttackAbilities($cardID);
         if($from == "PLAY" && DelimStringContains(CardSubType($cardID), "Ally")) SpecificAllyAttackAbilities($cardID);
       }

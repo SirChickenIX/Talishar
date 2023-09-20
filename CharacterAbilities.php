@@ -142,7 +142,7 @@ function CharacterStartTurnAbility($index)
         AddCurrentTurnEffect("EVR019", $mainPlayer);
       }
       break;
-    case "DYN117": case "DYN118": case "OUT011":
+    case "DYN117": case "DYN118": case "OUT011": case "EVO235":
       $discardIndex = SearchDiscardForCard($mainPlayer, $char->cardID);
       if(CountItem("EVR195", $mainPlayer) >= 2 && $discardIndex != "") {
         AddDecisionQueue("COUNTITEM", $mainPlayer, "EVR195");
@@ -454,8 +454,16 @@ function CharacterCostModifier($cardID, $from)
 {
   global $currentPlayer, $CS_NumSwordAttacks;
   $modifier = 0;
-  if(CardSubtype($cardID) == "Sword" && GetClassState($currentPlayer, $CS_NumSwordAttacks) == 1 && SearchCharacterActive($currentPlayer, "CRU077")) {
-    --$modifier;
+  $char = &GetPlayerCharacter($currentPlayer);
+  for($i=0; $i<count($char); $i+=CharacterPieces()) {
+    if($char[$i+1] < 2) continue;
+    switch($char[$i]) {
+      case "CRU077": if(CardSubtype($cardID) == "Sword" && GetClassState($currentPlayer, $CS_NumSwordAttacks) == 1) --$modifier; break;
+      case "TCC001": if(SubtypeContains($cardID, "Evo")) --$modifier; break;
+      case "TCC408": if($cardID == "TCC002") --$modifier; break;
+      case "EVO001": case "EVO002": if($from == "DECK" && SubtypeContains($cardID, "Item", $currentPlayer) && CardCost($cardID) < 2) ++$modifier; break;
+      default: break;
+    }
   }
   return CanCostBeModified($cardID) ? $modifier : 0;
 }
@@ -573,6 +581,7 @@ function EquipPayAdditionalCosts($cardIndex, $from)
     case "OUT011": case "OUT049": case "OUT095": case "OUT098": case "OUT140": case "OUT141": case "OUT157": case "OUT158":
     case "OUT175": case "OUT176": case "OUT177": case "OUT178": case "OUT179": case "OUT180": case "OUT181": case "OUT182":
     case "TCC079": case "TCC082":
+    case "EVO235": case "EVO247":
       DestroyCharacter($currentPlayer, $cardIndex);
       break;
     case "DTD001": case "DTD002":
@@ -613,6 +622,7 @@ function CharacterTriggerInGraveyard($cardID)
   switch($cardID) {
     case "DYN117": case "DYN118": return true;
     case "OUT011": return true;
+    case "EVO235": return true;
     default: return false;
   }
 }
@@ -887,6 +897,30 @@ function CharacterDealDamageAbilities($player, $damage)
         break;
       default:
         break;
+    }
+  }
+}
+
+function CharacterAttackAbilities($attackID)
+{
+  global $mainPlayer;
+  $char = &GetPlayerCharacter($mainPlayer);
+  for($i=0; $i<count($char); $i+=CharacterPieces()) {
+    if($char[$i+1] == 0) continue;//Don't do effect if destroyed
+    switch($char[$i]) {
+      case "TCC409":
+        if($attackID == "TCC002") {
+          AddCurrentTurnEffect($char[$i], $mainPlayer);
+          WriteLog("Evo Scatter Shot gives +1");
+        }
+        break;
+      case "TCC410":
+        if($attackID == "TCC002") {
+          GiveAttackGoAgain();
+          WriteLog("Evo Rapid Fire gives Go Again");
+        }
+        break;
+      default: break;
     }
   }
 }
